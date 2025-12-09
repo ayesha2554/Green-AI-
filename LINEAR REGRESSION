@@ -1,0 +1,88 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+import joblib
+df = pd.read_csv("solar_power_output.csv")
+df.head(10)
+#df.shape
+# Features and target variable
+X = df[['temperature' ,'humidity' ,'solar_irradiance' , 'wind_speed' ]]
+y = df['solar_power_output' ]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+y_train
+model = LinearRegression()
+model.fit(X_train, y_train)
+# Predicting the solar power output on the test set
+y_pred = model.predict(X_test)
+y_pred
+y_test
+y_pred
+# Evaluate the model performance
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f"Mean Squared Error: {mse}")
+print(f"R-squared: {r2}")
+model.predict([[31.325236,69.939040,654.985283,1.371097]])
+import matplotlib.pyplot as plt
+
+# Scatter plot to compare actual vs predicted values
+plt.figure(figsize=(10, 5))
+plt.scatter(y_test, y_pred, color='blue', label='Predicted vs Actual')
+# Diagonal line for perfect predictions
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color='red', linestyle='--', label='Perfect Fit')
+plt.xlabel("Actual Solar Power Output")
+plt.ylabel("Predicted Solar Power Output")
+plt.title("Actual vs Predicted Solar Power Output")
+plt.legend()
+plt.show()
+# Line plot to show predictions and actual values
+plt.figure(figsize=(10, 5))
+plt.plot(range(len(y_test)), y_test, label="Actual Solar Power Output", marker='o')
+plt.plot(range(len(y_test)), y_pred, label="Predicted Solar Power Output", marker='x')
+plt.xlabel("Data Point Index")
+plt.ylabel("Solar Power Output")
+plt.title("Actual vs Predicted Solar Power Output (Line Plot)")
+plt.legend()
+plt.show()
+# Save the trained model
+joblib.dump(model, 'solar_power_prediction_model.pkl')
+#print(type(model))
+# Load the saved model
+model = joblib. load("solar_power_prediction_model.pkl")
+
+# New input data for prediction
+# Example input (temperature, humidity, solar_irradiance,wind_speed)
+new_data = np.array([[19.36, 75.85,266.61,5.19]])
+
+# Predict solar power output
+predicted_output = model.predict(new_data)
+print(f"Predicted Solar Power Output: {predicted_output[0]} watts")
+#pip install gradio
+import numpy as np
+import gradio as gr
+
+# use your actual trained model variable here
+solar_model = model   # change 'model' if your variable name is different
+
+def predict_solar_power(temperature, humidity, solar_irradiance, wind_speed):
+    # order MUST match training feature order
+    X = np.array([[temperature, humidity, solar_irradiance, wind_speed]])
+    y_pred = solar_model.predict(X)[0]
+    return f"Estimated Solar Power Output: {y_pred:.2f} kW"
+
+demo = gr.Interface(
+    fn=predict_solar_power,
+    inputs=[
+        gr.Slider(0, 50, 25, step=0.5, label="Temperature (°C)"),
+        gr.Slider(0, 100, 50, step=1, label="Humidity (%)"),
+        gr.Slider(0, 1200, 800, step=10, label="Solar Irradiance (W/m²)"),
+        gr.Slider(0, 15, 3, step=0.5, label="Wind Speed (m/s)"),
+    ],
+    outputs=gr.Textbox(label="Prediction"),
+    title="☀️ Solar Power Output Predictor",
+    description="Interactive demo for the Linear Regression model from this lab.",
+)
+
+demo.launch()   # use demo.launch(share=True) if you want a public link
